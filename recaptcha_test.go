@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	apiBase = "https://www.google.com"
+	apiBase     = "https://www.google.com"
 	apiEndPoint = "/recaptcha/api/siteverify"
-	apiSecret = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
-	gResponse = "ABCDEF"
-	clientIP = "127.0.0.1"
-	jsonCT = "application/json; charset=utf-8"
+	apiSecret   = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
+	gResponse   = "ABCDEF"
+	clientIP    = "127.0.0.1"
+	jsonCT      = "application/json; charset=utf-8"
 )
 
 func verifyV3(secret, resp, remoteIP string) recaptcha.Response {
@@ -25,17 +25,17 @@ func verifyV3(secret, resp, remoteIP string) recaptcha.Response {
 type verify func(secret, resp, remoteIP string) recaptcha.Response
 
 func TestVerifySuccess(t *testing.T) {
-	t.Run("V2",testVerifySuccess(recaptcha.Verify))
-	t.Run("V3",testVerifySuccess(verifyV3))
+	t.Run("V2", testVerifySuccess(recaptcha.Verify))
+	t.Run("V3", testVerifySuccess(verifyV3))
 }
-func testVerifySuccess(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
+func testVerifySuccess(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
 		defer gock.Off()
 		gock.New(apiBase).
 			Post(apiEndPoint).
 			Reply(200).
 			AddHeader("Content-Type", jsonCT).
-			BodyString(`{"success": true, "challenge_ts": "2019-10-20T16:09:06Z"}`)	
+			BodyString(`{"success": true, "challenge_ts": "2019-10-20T16:09:06Z"}`)
 		resp := verify(apiSecret, gResponse, "")
 		if len(resp.Errors) != 0 {
 			t.Errorf("the errors array should be empty but it contains: %+v", resp.Errors)
@@ -50,30 +50,30 @@ func testVerifySuccess(verify verify) func (t *testing.T) {
 }
 
 func TestRequestBody(t *testing.T) {
-	t.Run("V2",testRequestBody(recaptcha.Verify))
-	t.Run("V3",testRequestBody(verifyV3))
+	t.Run("V2", testRequestBody(recaptcha.Verify))
+	t.Run("V3", testRequestBody(verifyV3))
 }
 
-func testRequestBody(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
-		t.Run("without remoteIP", func (t *testing.T) {
+func testRequestBody(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Run("without remoteIP", func(t *testing.T) {
 			defer gock.Off()
 			gock.New(apiBase).
-			Post(apiEndPoint).
-			AddMatcher(testRequestBodyMatecher(t, false)).
-			Reply(200).
-			AddHeader("Content-Type", jsonCT).
-			BodyString(`{"success": true}`)	
+				Post(apiEndPoint).
+				AddMatcher(testRequestBodyMatecher(t, false)).
+				Reply(200).
+				AddHeader("Content-Type", jsonCT).
+				BodyString(`{"success": true}`)
 			verify(apiSecret, gResponse, "")
 		})
-		t.Run("with remoteIP", func (t *testing.T) {
+		t.Run("with remoteIP", func(t *testing.T) {
 			defer gock.Off()
 			gock.New(apiBase).
-			Post(apiEndPoint).
-			AddMatcher(testRequestBodyMatecher(t, true)).
-			Reply(200).
-			AddHeader("Content-Type", jsonCT).
-			BodyString(`{"success": true}`)	
+				Post(apiEndPoint).
+				AddMatcher(testRequestBodyMatecher(t, true)).
+				Reply(200).
+				AddHeader("Content-Type", jsonCT).
+				BodyString(`{"success": true}`)
 			verify(apiSecret, gResponse, clientIP)
 		})
 	}
@@ -117,40 +117,40 @@ func testRequestBodyMatecher(t *testing.T, useIP bool) gock.MatchFunc {
 				t.Errorf("the remoteIP should be empty, but %s was found", remoteIP)
 			}
 		}
-		return true, nil 
+		return true, nil
 	}
 }
 
 func TestErrInvalidInputResponse(t *testing.T) {
-	t.Run("V2",testErrInvalidInputResponse(recaptcha.Verify))
-	t.Run("V3",testErrInvalidInputResponse(verifyV3))
+	t.Run("V2", testErrInvalidInputResponse(recaptcha.Verify))
+	t.Run("V3", testErrInvalidInputResponse(verifyV3))
 }
 
-func testErrInvalidInputResponse(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
-		t.Run("empty response", func (t *testing.T) {
+func testErrInvalidInputResponse(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Run("empty response", func(t *testing.T) {
 			defer gock.Off()
 			gock.DisableNetworking()
 			resp := verify(apiSecret, "", "")
 			errInvalidInputResponseHelper(t, resp)
 		})
-		t.Run("invalid response", func (t *testing.T) {
+		t.Run("invalid response", func(t *testing.T) {
 			defer gock.Off()
 			gock.New(apiBase).
-			Post(apiEndPoint).
-			Reply(200).
-			AddHeader("Content-Type", jsonCT).
-			BodyString(`{"success": false, "error-codes": ["invalid-input-response"]}`)	
+				Post(apiEndPoint).
+				Reply(200).
+				AddHeader("Content-Type", jsonCT).
+				BodyString(`{"success": false, "error-codes": ["invalid-input-response"]}`)
 			resp := verify(apiSecret, gResponse, "")
 			errInvalidInputResponseHelper(t, resp)
 		})
-		t.Run("missing response", func (t *testing.T) {
+		t.Run("missing response", func(t *testing.T) {
 			defer gock.Off()
 			gock.New(apiBase).
-			Post(apiEndPoint).
-			Reply(200).
-			AddHeader("Content-Type", jsonCT).
-			BodyString(`{"success": false, "error-codes": ["missing-input-response"]}`)	
+				Post(apiEndPoint).
+				Reply(200).
+				AddHeader("Content-Type", jsonCT).
+				BodyString(`{"success": false, "error-codes": ["missing-input-response"]}`)
 			resp := verify(apiSecret, gResponse, "")
 			errInvalidInputResponseHelper(t, resp)
 		})
@@ -175,29 +175,29 @@ func errInvalidInputResponseHelper(t *testing.T, resp recaptcha.Response) {
 }
 
 func TestErrInvalidInputSecret(t *testing.T) {
-	t.Run("V2",testErrInvalidInputSecret(recaptcha.Verify))
-	t.Run("V3",testErrInvalidInputSecret(verifyV3))
+	t.Run("V2", testErrInvalidInputSecret(recaptcha.Verify))
+	t.Run("V3", testErrInvalidInputSecret(verifyV3))
 }
 
-func testErrInvalidInputSecret(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
-		t.Run("empty key", func (t *testing.T) {
+func testErrInvalidInputSecret(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Run("empty key", func(t *testing.T) {
 			defer gock.Off()
 			gock.DisableNetworking()
 			resp := verify("", gResponse, "")
 			errInvalidInputSecretHelper(t, resp)
 		})
-		t.Run("invalid key", func (t *testing.T) {
+		t.Run("invalid key", func(t *testing.T) {
 			defer gock.Off()
 			gock.New(apiBase).
 				Post(apiEndPoint).
 				Reply(200).
 				AddHeader("Content-Type", jsonCT).
-				BodyString(`{"success": false, "error-codes": ["invalid-input-secret"]}`)	
+				BodyString(`{"success": false, "error-codes": ["invalid-input-secret"]}`)
 			resp := verify(apiSecret, gResponse, "")
 			errInvalidInputSecretHelper(t, resp)
 		})
-		t.Run("missing key", func (t *testing.T) {
+		t.Run("missing key", func(t *testing.T) {
 			defer gock.Off()
 			gock.New(apiBase).
 				Post(apiEndPoint).
@@ -228,12 +228,12 @@ func errInvalidInputSecretHelper(t *testing.T, resp recaptcha.Response) {
 }
 
 func TestErrBadRequest(t *testing.T) {
-	t.Run("V2",testErrBadRequest(recaptcha.Verify))
-	t.Run("V3",testErrBadRequest(verifyV3))
+	t.Run("V2", testErrBadRequest(recaptcha.Verify))
+	t.Run("V3", testErrBadRequest(verifyV3))
 }
 
-func testErrBadRequest(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
+func testErrBadRequest(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
 		defer gock.Off()
 		gock.New(apiBase).
 			Post(apiEndPoint).
@@ -259,12 +259,12 @@ func testErrBadRequest(verify verify) func (t *testing.T) {
 }
 
 func TestErrTimeoutOrDuplicate(t *testing.T) {
-	t.Run("V2",testErrTimeoutOrDuplicate(recaptcha.Verify))
-	t.Run("V3",testErrTimeoutOrDuplicate(verifyV3))
+	t.Run("V2", testErrTimeoutOrDuplicate(recaptcha.Verify))
+	t.Run("V3", testErrTimeoutOrDuplicate(verifyV3))
 }
 
-func testErrTimeoutOrDuplicate(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
+func testErrTimeoutOrDuplicate(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
 		defer gock.Off()
 		gock.New(apiBase).
 			Post(apiEndPoint).
@@ -290,12 +290,12 @@ func testErrTimeoutOrDuplicate(verify verify) func (t *testing.T) {
 }
 
 func TestUnknownAPIError(t *testing.T) {
-	t.Run("V2",testUnknownAPIError(recaptcha.Verify))
-	t.Run("V3",testUnknownAPIError(verifyV3))
-} 
+	t.Run("V2", testUnknownAPIError(recaptcha.Verify))
+	t.Run("V3", testUnknownAPIError(verifyV3))
+}
 
-func testUnknownAPIError(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
+func testUnknownAPIError(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
 		defer gock.Off()
 		gock.New(apiBase).
 			Post(apiEndPoint).
@@ -321,12 +321,12 @@ func testUnknownAPIError(verify verify) func (t *testing.T) {
 }
 
 func TestMultiError(t *testing.T) {
-	t.Run("V2",testMultiError(recaptcha.Verify))
-	t.Run("V3",testMultiError(verifyV3))
-} 
+	t.Run("V2", testMultiError(recaptcha.Verify))
+	t.Run("V3", testMultiError(verifyV3))
+}
 
-func testMultiError(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
+func testMultiError(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
 		defer gock.Off()
 		gock.New(apiBase).
 			Post(apiEndPoint).
@@ -352,12 +352,12 @@ func testMultiError(verify verify) func (t *testing.T) {
 }
 
 func TestUnexpectedError(t *testing.T) {
-	t.Run("V2",testUnexpectedError(recaptcha.Verify))
-	t.Run("V3",testUnexpectedError(verifyV3))
-} 
+	t.Run("V2", testUnexpectedError(recaptcha.Verify))
+	t.Run("V3", testUnexpectedError(verifyV3))
+}
 
-func testUnexpectedError(verify verify) func (t *testing.T) {
-	return func (t *testing.T) {
+func testUnexpectedError(verify verify) func(t *testing.T) {
+	return func(t *testing.T) {
 		defer gock.Off()
 		gock.New(apiBase).
 			Post(apiEndPoint).
@@ -370,7 +370,7 @@ func testUnexpectedError(verify verify) func (t *testing.T) {
 			if length != 1 {
 				t.Errorf("the errors array should only contain one error but it contains: %+v", resp.Errors)
 			}
-			if !strings.Contains(resp.Errors[0].Error(), "Error unmarshalling the response body: json: cannot unmarshal string"){
+			if !strings.Contains(resp.Errors[0].Error(), "Error unmarshalling the response body: json: cannot unmarshal string") {
 				t.Errorf("the errors array should contain an error with the \"Error unmarshalling the response body: json: cannot unmarshal string\" message but it contains: %+v", resp.Errors)
 			}
 		} else {
@@ -385,10 +385,10 @@ func testUnexpectedError(verify verify) func (t *testing.T) {
 func TestV3ScoreAndAction(t *testing.T) {
 	defer gock.Off()
 	gock.New(apiBase).
-			Post(apiEndPoint).
-			Reply(200).
-			AddHeader("Content-Type", jsonCT).
-			BodyString(`{"success": true, "score": 0.8, "action": "test", "challenge_ts": "2019-10-20T16:09:06Z"}`)	
+		Post(apiEndPoint).
+		Reply(200).
+		AddHeader("Content-Type", jsonCT).
+		BodyString(`{"success": true, "score": 0.8, "action": "test", "challenge_ts": "2019-10-20T16:09:06Z"}`)
 	resp := recaptcha.VerifyV3(apiSecret, gResponse, "")
 	if len(resp.Errors) != 0 {
 		t.Errorf("the errors array should be empty but it contains: %+v", resp.Errors)

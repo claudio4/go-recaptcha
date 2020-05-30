@@ -1,11 +1,11 @@
 package recaptcha
 
 import (
-	"errors"
 	"encoding/json"
+	"errors"
 )
 
-//UserError is used to declare the user fault. 
+//UserError is used to declare the user fault.
 type UserError struct {
 	message string
 }
@@ -17,11 +17,10 @@ func (err *UserError) Error() string {
 
 //nolint
 var (
-
-	ErrBadRequest = errors.New("the request is invalid or malformed")
+	ErrBadRequest           = errors.New("the request is invalid or malformed")
 	ErrInvalidInputResponse = &UserError{message: "the response parameter is invalid or malformed"}
-	ErrInvalidInputSecret = errors.New("the secret parameter is invalid or malformed")
-	ErrTimeoutOrDuplicate = &UserError{message: "the response is no longer valid: either is too old or has been used previously"}
+	ErrInvalidInputSecret   = errors.New("the secret parameter is invalid or malformed")
+	ErrTimeoutOrDuplicate   = &UserError{message: "the response is no longer valid: either is too old or has been used previously"}
 )
 
 //Errors allows to have a custom json unmarshalling implementation for a errors slice

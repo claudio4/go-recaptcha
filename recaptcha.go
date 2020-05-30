@@ -13,16 +13,16 @@ const verifyURL = "https://www.google.com/recaptcha/api/siteverify"
 
 //Response represents the reCAPTCHA v2/Invisible reCAPTCHA verification Response
 type Response struct {
-	Success            bool    `json:"success"`
-	ChallengeTimeStamp string  `json:"challenge_ts"`
-	Errors             Errors  `json:"error-codes"`
+	Success            bool   `json:"success"`
+	ChallengeTimeStamp string `json:"challenge_ts"`
+	Errors             Errors `json:"error-codes"`
 }
 
 //ResponseV3 represents the reCAPTCHA v3 verification response
 type ResponseV3 struct {
 	Response
-	Score    float64 `json:"score"`
-	Action   string  `json:"action"`
+	Score  float64 `json:"score"`
+	Action string  `json:"action"`
 }
 
 //Verify
@@ -79,4 +79,3 @@ func verify(secret, resp, remoteIP string, result interface{}) error {
 	}
 	return nil
 }
-
