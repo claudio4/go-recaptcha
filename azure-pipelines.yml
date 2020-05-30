@@ -1,0 +1,6 @@
+steps:
+- task: Go@0
+  displayName: 'go test'
+  inputs:
+    command: test
+    arguments: ./...
