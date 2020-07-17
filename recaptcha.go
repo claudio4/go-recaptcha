@@ -53,10 +53,10 @@ func verify(secret, resp, remoteIP string, result interface{}) error {
 	}
 
 	data := url.Values{}
-	data.Add("secret", secret)
-	data.Add("response", resp)
+	data.Set("secret", secret)
+	data.Set("response", resp)
 	if remoteIP != "" {
-		data.Add("remoteip", remoteIP)
+		data.Set("remoteip", remoteIP)
 	}
 	response, err := client.PostForm(verifyURL, data)
 	if err != nil {
