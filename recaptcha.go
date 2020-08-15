@@ -1,3 +1,4 @@
+// Package recaptcha procides a direct port of the Google's Recaptcha API
 package recaptcha
 
 import (
@@ -11,21 +12,31 @@ import (
 
 const verifyURL = "https://www.google.com/recaptcha/api/siteverify"
 
-//Response represents the reCAPTCHA v2/Invisible reCAPTCHA verification Response
+// Response represents the reCAPTCHA v2/Invisible reCAPTCHA verification Response
 type Response struct {
-	Success            bool   `json:"success"`
+	// Wether the user captcha respone is valid or not
+	Success bool `json:"success"`
+	// timestamp of the challenge load (ISO format yyyy-MM-dd'T'HH:mm:ssZZ)
 	ChallengeTimeStamp string `json:"challenge_ts"`
-	Errors             Errors `json:"error-codes"`
+	// Errors, the user errors are represented by the UserError type, all Recaptcha are present as global variables in this package
+	// Other technical errors can be contained in this slice as for example, connection errors
+	Errors Errors `json:"error-codes"`
 }
 
-//ResponseV3 represents the reCAPTCHA v3 verification response
+// ResponseV3 represents the reCAPTCHA v3 verification response
 type ResponseV3 struct {
 	Response
-	Score  float64 `json:"score"`
-	Action string  `json:"action"`
+	// the score for the request (0.0 - 1.0)
+	Score float64 `json:"score"`
+	// Read more at https://developers.google.com/recaptcha/docs/v3#actions
+	Action string `json:"action"`
 }
 
-//Verify
+// Verify verifies if the an usesr's Recaptcha v2/Invisible response is valid
+// Parameters:
+//  - secret The Recaptcha API secret key
+//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - remoteIP (optional) the user's IP, if provided Recaptcha will check if the user resolved the captcha with same IP
 func Verify(secret, resp, remoteIP string) (response Response) {
 	err := verify(secret, resp, remoteIP, &response)
 	if err != nil {
@@ -34,6 +45,11 @@ func Verify(secret, resp, remoteIP string) (response Response) {
 	return response
 }
 
+// VerifyV3 verifies if the an usesr's Recaptcha v3 response is valid
+// Parameters:
+//  - secret The Recaptcha API secret key
+//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - remoteIP (optional) The user's IP address, if provided Recaptcha will check if the user resolved the captcha with same IP
 func VerifyV3(secret, resp, remoteIP string) (response ResponseV3) {
 	err := verify(secret, resp, remoteIP, &response)
 	if err != nil {
