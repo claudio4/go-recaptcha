@@ -1,6 +1,7 @@
 # Go Recaptcha
 [![Build Status](https://claudio4.visualstudio.com/go-recaptcha/_apis/build/status/claudio4.go-recaptcha?branchName=master)](https://claudio4.visualstudio.com/go-recaptcha/_build/latest?definitionId=1&branchName=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/claudio4/go-recaptcha/blob/master/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/claudio4/go-recaptcha)](https://goreportcard.com/report/github.com/claudio4/go-recaptcha)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/claudio4/go-recaptcha)](https://pkg.go.dev/github.com/claudio4/go-recaptcha?tab=doc)
 
 Google's Recaptcha API in Go!
