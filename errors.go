@@ -11,7 +11,7 @@ type UserError struct {
 }
 
 // Error returns the error message
-func (err UserError) Error() string {
+func (err *UserError) Error() string {
 	return err.message
 }
 
