@@ -58,6 +58,11 @@ func VerifyV3(secret, resp, remoteIP string) (response ResponseV3) {
 	return response
 }
 
+// ParseTimeStamp transforms a Recaptcha ChallengeTimeStamp string into a time.Time
+func ParseTimeStamp(ts string) (time.Time, error) {
+	return time.Parse(time.RFC3339, ts)
+}
+
 var client = &http.Client{Timeout: 10 * time.Second}
 
 func verify(secret, resp, remoteIP string, result interface{}) error {

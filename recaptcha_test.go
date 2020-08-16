@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/claudio4/go-recaptcha"
 	"gopkg.in/h2non/gock.v1"
@@ -405,5 +406,17 @@ func TestV3ScoreAndAction(t *testing.T) {
 
 	if resp.Action != "test" {
 		t.Errorf("response.Success should be \"test\" but it was %s", resp.Action)
+	}
+}
+
+func TestParseTimeStamp(t *testing.T) {
+	tsStr := "2020-08-16T12:18:29Z"
+	ts, err := recaptcha.ParseTimeStamp(tsStr)
+	if err != nil {
+		t.Errorf("unexpected error ocurred: %w", err)
+	}
+	expectedTS := time.Date(2020, 8, 16, 12, 18, 29, 0, time.UTC)
+	if !ts.Equal(expectedTS) {
+		t.Errorf("The date was expected to be \"%v\" but got \"%v\"", expectedTS, ts)
 	}
 }
