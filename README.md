@@ -27,11 +27,11 @@ None at the moment!
 
 	resp := recaptcha.Verify(secret, userResp, userIP)
 	if len(resp.Errors) != 0 {
-		userErr := recaptcha.UserError{}
+		var userErr *recaptcha.UserError
 		for _, err := range resp.Errors {
 			if errors.As(err, &userErr) {
 				// Error is user's fault
-				printErrorToUser(&userErr)
+				printErrorToUser(userErr)
 			} else {
 				// Error is the app fault
 				panic(err)
