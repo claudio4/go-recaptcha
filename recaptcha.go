@@ -14,7 +14,7 @@ const verifyURL = "https://www.google.com/recaptcha/api/siteverify"
 
 // Response represents the reCAPTCHA v2/Invisible reCAPTCHA verification Response
 type Response struct {
-	// Wether the user captcha respone is valid or not
+	// Wether the user captcha response is valid or not
 	Success bool `json:"success"`
 	// timestamp of the challenge load (ISO format yyyy-MM-dd'T'HH:mm:ssZZ)
 	ChallengeTimeStamp string `json:"challenge_ts"`
