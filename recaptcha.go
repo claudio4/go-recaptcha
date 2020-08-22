@@ -2,11 +2,13 @@
 package recaptcha
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -43,7 +45,7 @@ type ResponseV3 struct {
 //  - resp The user response token provided by the reCAPTCHA client-side integration on your site
 //  - remoteIP (optional) the user's IP, if provided Recaptcha will check if the user resolved the captcha with same IP
 func Verify(secret, resp, remoteIP string) (response Response) {
-	err := verify(secret, resp, remoteIP, &response)
+	err := verify(context.Background(), secret, resp, remoteIP, &response)
 	if err != nil {
 		response.Errors = []error{err}
 	}
@@ -56,7 +58,7 @@ func Verify(secret, resp, remoteIP string) (response Response) {
 //  - resp The user response token provided by the reCAPTCHA client-side integration on your site
 //  - remoteIP (optional) The user's IP address, if provided Recaptcha will check if the user resolved the captcha with same IP
 func VerifyV3(secret, resp, remoteIP string) (response ResponseV3) {
-	err := verify(secret, resp, remoteIP, &response)
+	err := verify(context.Background(), secret, resp, remoteIP, &response)
 	if err != nil {
 		response.Errors = []error{err}
 	}
@@ -68,7 +70,7 @@ func ParseTimeStamp(ts string) (time.Time, error) {
 	return time.Parse(time.RFC3339, ts)
 }
 
-func verify(secret, resp, remoteIP string, result interface{}) error {
+func verify(ctx context.Context, secret, resp, remoteIP string, result interface{}) error {
 	if secret == "" {
 		return ErrInvalidInputSecret
 	}
@@ -82,11 +84,18 @@ func verify(secret, resp, remoteIP string, result interface{}) error {
 	if remoteIP != "" {
 		data.Set("remoteip", remoteIP)
 	}
-	response, err := HTTPClient.PostForm(verifyURL, data)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, verifyURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	response, err := HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer response.Body.Close()
+
 	bodyContent, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return fmt.Errorf("unable to the response body")
