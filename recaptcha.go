@@ -39,26 +39,46 @@ type ResponseV3 struct {
 	Action string `json:"action"`
 }
 
-// Verify verifies if the an usesr's Recaptcha v2/Invisible response is valid
+// Verify verifies if the an usesr's Recaptcha v2/Invisible response is valid (same as VerifyWithContext with context.Background())
 // Parameters:
 //  - secret The Recaptcha API secret key
 //  - resp The user response token provided by the reCAPTCHA client-side integration on your site
 //  - remoteIP (optional) the user's IP, if provided Recaptcha will check if the user resolved the captcha with same IP
 func Verify(secret, resp, remoteIP string) (response Response) {
-	err := verify(context.Background(), secret, resp, remoteIP, &response)
+	return VerifyWithContext(context.Background(), secret, resp, remoteIP)
+}
+
+// Verify verifies if the an usesr's Recaptcha v2/Invisible response is valid
+// Parameters:
+//  - ctx Provides context for cancelation
+//  - secret The Recaptcha API secret key
+//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - remoteIP (optional) the user's IP, if provided Recaptcha will check if the user resolved the captcha with same IP
+func VerifyWithContext(ctx context.Context, secret, resp, remoteIP string) (response Response) {
+	err := verify(ctx, secret, resp, remoteIP, &response)
 	if err != nil {
 		response.Errors = []error{err}
 	}
 	return response
 }
 
-// VerifyV3 verifies if the an usesr's Recaptcha v3 response is valid
+// VerifyV3 verifies if the an usesr's Recaptcha v3 response is valid (same as VerifyV3WithContext with context.Background())
 // Parameters:
 //  - secret The Recaptcha API secret key
 //  - resp The user response token provided by the reCAPTCHA client-side integration on your site
 //  - remoteIP (optional) The user's IP address, if provided Recaptcha will check if the user resolved the captcha with same IP
 func VerifyV3(secret, resp, remoteIP string) (response ResponseV3) {
-	err := verify(context.Background(), secret, resp, remoteIP, &response)
+	return VerifyV3WithContext(context.Background(), secret, resp, remoteIP)
+}
+
+// VerifyV3WithContext verifies if the an usesr's Recaptcha v3 response is valid
+// Parameters:
+//  - ctx Provides context for cancelation
+//  - secret The Recaptcha API secret key
+//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - remoteIP (optional) The user's IP address, if provided Recaptcha will check if the user resolved the captcha with same IP
+func VerifyV3WithContext(ctx context.Context, secret, resp, remoteIP string) (response ResponseV3) {
+	err := verify(ctx, secret, resp, remoteIP, &response)
 	if err != nil {
 		response.Errors = []error{err}
 	}
