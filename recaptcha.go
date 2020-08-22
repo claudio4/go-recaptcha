@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+// HTTPClient is the client used by lib, normally you don't need to modify it
+// but it can be modified to alter the tiemout, to reuse another client, etc.
+// Remember http.Client is thread-safe by default
+var HTTPClient = &http.Client{Timeout: 10 * time.Second}
+
 const verifyURL = "https://www.google.com/recaptcha/api/siteverify"
 
 // Response represents the reCAPTCHA v2/Invisible reCAPTCHA verification Response
@@ -63,8 +68,6 @@ func ParseTimeStamp(ts string) (time.Time, error) {
 	return time.Parse(time.RFC3339, ts)
 }
 
-var client = &http.Client{Timeout: 10 * time.Second}
-
 func verify(secret, resp, remoteIP string, result interface{}) error {
 	if secret == "" {
 		return ErrInvalidInputSecret
@@ -79,7 +82,7 @@ func verify(secret, resp, remoteIP string, result interface{}) error {
 	if remoteIP != "" {
 		data.Set("remoteip", remoteIP)
 	}
-	response, err := client.PostForm(verifyURL, data)
+	response, err := HTTPClient.PostForm(verifyURL, data)
 	if err != nil {
 		return err
 	}
