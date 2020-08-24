@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -42,20 +43,20 @@ type ResponseV3 struct {
 // Verify verifies if the an usesr's Recaptcha v2/Invisible response is valid (same as VerifyWithContext with context.Background())
 // Parameters:
 //  - secret The Recaptcha API secret key
-//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - clientResponse The user response token provided by the reCAPTCHA client-side integration of your app
 //  - remoteIP (optional) the user's IP, if provided Recaptcha will check if the user resolved the captcha with same IP
-func Verify(secret, resp, remoteIP string) (response Response) {
-	return VerifyWithContext(context.Background(), secret, resp, remoteIP)
+func Verify(secret, clientResponse, remoteIP string) (response Response) {
+	return VerifyWithContext(context.Background(), secret, clientResponse, remoteIP)
 }
 
 // Verify verifies if the an usesr's Recaptcha v2/Invisible response is valid
 // Parameters:
 //  - ctx Provides context for cancelation
 //  - secret The Recaptcha API secret key
-//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - clientResponse The user response token provided by the reCAPTCHA client-side integration of your app
 //  - remoteIP (optional) the user's IP, if provided Recaptcha will check if the user resolved the captcha with same IP
-func VerifyWithContext(ctx context.Context, secret, resp, remoteIP string) (response Response) {
-	err := verify(ctx, secret, resp, remoteIP, &response)
+func VerifyWithContext(ctx context.Context, secret, clientResponse, remoteIP string) (response Response) {
+	err := verify(ctx, secret, clientResponse, remoteIP, &response)
 	if err != nil {
 		response.Errors = []error{err}
 	}
@@ -65,20 +66,20 @@ func VerifyWithContext(ctx context.Context, secret, resp, remoteIP string) (resp
 // VerifyV3 verifies if the an usesr's Recaptcha v3 response is valid (same as VerifyV3WithContext with context.Background())
 // Parameters:
 //  - secret The Recaptcha API secret key
-//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - clientResponse The user response token provided by the reCAPTCHA client-side integration of your app
 //  - remoteIP (optional) The user's IP address, if provided Recaptcha will check if the user resolved the captcha with same IP
-func VerifyV3(secret, resp, remoteIP string) (response ResponseV3) {
-	return VerifyV3WithContext(context.Background(), secret, resp, remoteIP)
+func VerifyV3(secret, clientResponse, remoteIP string) (response ResponseV3) {
+	return VerifyV3WithContext(context.Background(), secret, clientResponse, remoteIP)
 }
 
 // VerifyV3WithContext verifies if the an usesr's Recaptcha v3 response is valid
 // Parameters:
 //  - ctx Provides context for cancelation
 //  - secret The Recaptcha API secret key
-//  - resp The user response token provided by the reCAPTCHA client-side integration on your site
+//  - clientResponse The user response token provided by the reCAPTCHA client-side integration of your app
 //  - remoteIP (optional) The user's IP address, if provided Recaptcha will check if the user resolved the captcha with same IP
-func VerifyV3WithContext(ctx context.Context, secret, resp, remoteIP string) (response ResponseV3) {
-	err := verify(ctx, secret, resp, remoteIP, &response)
+func VerifyV3WithContext(ctx context.Context, secret, clientResponse, remoteIP string) (response ResponseV3) {
+	err := verify(ctx, secret, clientResponse, remoteIP, &response)
 	if err != nil {
 		response.Errors = []error{err}
 	}
@@ -90,46 +91,62 @@ func ParseTimeStamp(ts string) (time.Time, error) {
 	return time.Parse(time.RFC3339, ts)
 }
 
-func verify(ctx context.Context, secret, resp, remoteIP string, result interface{}) error {
+func verify(ctx context.Context, secret, clientResponse, remoteIP string, result interface{}) error {
 	if secret == "" {
 		return ErrInvalidInputSecret
 	}
-	if resp == "" {
+	if clientResponse == "" {
 		return ErrInvalidInputResponse
 	}
 
+	response, err := sendVerifyHTTPRequest(ctx, secret, clientResponse, remoteIP)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	return unmarshalJSONBody(response.Body, result)
+}
+
+func sendVerifyHTTPRequest(ctx context.Context, secret, clientResponse, remoteIP string) (*http.Response, error) {
 	data := url.Values{}
 	data.Set("secret", secret)
-	data.Set("response", resp)
+	data.Set("response", clientResponse)
 	if remoteIP != "" {
 		data.Set("remoteip", remoteIP)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, verifyURL, strings.NewReader(data.Encode()))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	response, err := HTTPClient.Do(req)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer response.Body.Close()
 
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		return nil, fmt.Errorf("unexpected response code %d", response.StatusCode)
+	}
 	if contentType := response.Header.Get("Content-Type"); !strings.Contains(contentType, "application/json") {
-		return fmt.Errorf("Unexpected response Content-Type: %s", contentType)
+		return nil, fmt.Errorf("Unexpected response Content-Type: %s", contentType)
 	}
 
-	bodyContent, err := ioutil.ReadAll(response.Body)
+	return response, nil
+}
+
+func unmarshalJSONBody(body io.Reader, target interface{}) error {
+	bodyContent, err := ioutil.ReadAll(body)
 	if err != nil {
 		return fmt.Errorf("unable to read response body %w", err)
 	}
-	if response.StatusCode < 200 || response.StatusCode > 299 {
-		return fmt.Errorf("unexpected response code %d, with content: %s", response.StatusCode, bodyContent)
-	}
-	err = json.Unmarshal(bodyContent, result)
+
+	err = json.Unmarshal(bodyContent, target)
 	if err != nil {
 		return fmt.Errorf("Error unmarshalling the response body: %w", err)
 	}
+
 	return nil
 }
