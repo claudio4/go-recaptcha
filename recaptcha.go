@@ -116,19 +116,20 @@ func verify(ctx context.Context, secret, resp, remoteIP string, result interface
 	}
 	defer response.Body.Close()
 
+	if contentType := response.Header.Get("Content-Type"); !strings.Contains(contentType, "application/json") {
+		return fmt.Errorf("Unexpected response Content-Type: %s", contentType)
+	}
+
 	bodyContent, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return fmt.Errorf("unable to the response body")
+		return fmt.Errorf("unable to read response body %w", err)
 	}
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		return fmt.Errorf("unexpected response code %d, with content: %s", response.StatusCode, bodyContent)
 	}
-	if contentType := response.Header.Get("Content-Type"); contentType != "application/json; charset=utf-8" {
-		return fmt.Errorf("Unexpected response Content-Type: %s", contentType)
-	}
 	err = json.Unmarshal(bodyContent, result)
 	if err != nil {
-		return fmt.Errorf("Error unmarshalling the response body: %s", err.Error())
+		return fmt.Errorf("Error unmarshalling the response body: %w", err)
 	}
 	return nil
 }
